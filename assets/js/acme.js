@@ -14,6 +14,12 @@
 // correctamente todo el flujo.
 // Busca los comentarios que dicen: REVISA AQUÍ:
 
+/*
+	CALLBACK URLS ---------------
+	Localtest:	https://hookbin.com/wNqMokpGLbfz88VDy8bP
+	Heroku:		https://jcvels-mp-qr-vendedor.herokuapp.com/api/notifications/get/
+*/
+var callbackurl = "https://hookbin.com/wNqMokpGLbfz88VDy8bP"; 
 
 
 $(document).ready(function() {
@@ -29,7 +35,6 @@ $(document).ready(function() {
 	fillCountrySelector();
 
 	// Abre modal al pulsar sobre el botón de pagar con Mercado Pago.
-
 	$('#exampleModal').on('show.bs.modal', function (event) {
 	  var button = $(event.relatedTarget); // Botón que gatilla la apertura modal
 	  var buttonOption = button.data('option'); 
@@ -39,13 +44,11 @@ $(document).ready(function() {
 	  switch(buttonOption) {
 
 		  case "Cash": // Opción de pago con efectivo. Pero antes de usarlo piensa detenidamente...
-		    
 		    playSound("cash");
 		    modal.find(".modal-body").text("Are you sure you wanna pay with cash?");
 		    modal.find(".btn-primary").text("¡NO! 🤣");
 		    modal.find(".btn-primary").on("click",function(){$('#exampleModal').modal("hide");});
 		    break;
-
 
 		  case "Mercado Pago": // Método de pago de Mercado Pago
 		  	var store_id = $('#store_id').val(); // Obtención de store_id de la página
@@ -53,34 +56,30 @@ $(document).ready(function() {
 		  	var external_reference = $('#external_reference').val(); // obtención del external_id de la página
 		  	modal.find(".modal-body").html("<center><div id='qr'></div><div id='countDown'></div><br/><div id='loading'></div><br/><div id='orderStatus'></div><div id='orderResponse'></div></center>");
 		    modal.find(".btn-primary").text("Cancel");
-		    
 
 		    // Muestra el código QR del punto de venta seleccionado
-
 		    // Llama al servicio de obtención de información de un POS/QR en base al external_pos_id o también llamado external_id
 			$.get("api/pos/get/",{"external_id":external_id},function(data){
 				console.log("Obtención información de QR:");
 				console.log(data);
 
 				// Si existe external_ID...
-
 				if(data.paging.total>0){
 			
 					// Muestra el código QR en pantalla:
-
 					$('#qr').html("<img with='350px' height='350px' src='"+data.results[0].qr.image+"'>");
 					
 					// REVISA AQUÍ:
 					// Agrega la URL notification_url 
 					// para recibir las notificaciones en tu endpoint público.
-
-					var orderJSON ={"external_reference": external_reference,
-									"notification_url": "",
-									"items" : items
-									};
+					var orderJSON =
+					{
+						"external_reference": external_reference,
+						"notification_url": callbackurl,
+						"items" : items
+					};
 
 					// Crea orden en base al external_id de la página
-
 					$.post("api/order/create/",{"external_id":external_id,"json":JSON.stringify(orderJSON)},function(data){
 
 						console.log("Crea orden:");
@@ -189,12 +188,7 @@ $(document).ready(function() {
 
 			});
 
-
-		    
-
-
 		    // Si el cajero cancela la orden
-
 		    modal.find(".btn-primary").on("click",function(){ // Cancela la orden
 
 		    	// Clear check status interval
@@ -210,17 +204,9 @@ $(document).ready(function() {
 		    break;
 		} // end switch
 
-
-
-
-	  modal.find('.modal-title').text('Pay with '+buttonOption);
+		modal.find('.modal-title').text('Pay with '+buttonOption);
 	  
 	});
-
-
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////
 // Common Functions
@@ -231,9 +217,7 @@ $(document).ready(function() {
 		sound.play();
     }; // end playsound
 
-
     // Pinta los productos en el checkout.
-
 	function showProductList(){
 		var total = 0;
 		for (i in items){
@@ -244,7 +228,6 @@ $(document).ready(function() {
 	}; // end showProductList
 
 	// Muestra cuenta atrás.
-
 	function startTimer(duration, display) {
 	    var timer = duration, minutes, seconds;
 	    setInterval(function () {
@@ -262,9 +245,7 @@ $(document).ready(function() {
     	}, 1000);
 	};// end starttimer 
 
-   
-
-///////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
 // Estas funciones muestran los selectores de país, región, comuna, barrio, ciudad
 ///////////////////////////////////////////////////////////////////////////
 	function fillCountrySelector(){
@@ -321,11 +302,40 @@ $(document).ready(function() {
 		var addressReference = $('#addressReference').val();
 		var externalStoreID = $('#externalStoreID').val();
 
-
-		// REVISA AQUÍ:
+		// REVISA AQUÍ: ------> HECHO!
 		// Modifica el storeJSON con la estructura necesaria para crear una Store correctamente.
-
-		var storeJSON = {}
+		var storeJSON =
+		{		  
+			"name":					storeName,
+			"business_hours":
+			{  
+				"monday":
+				[
+					{  
+						"open":		"08:00",
+						"close":	"18:00"
+					}
+				],
+				"tuesday":
+				[
+					{  
+						"open":		"08:00",
+						"close":	"18:00"
+					}
+				]   
+			},
+			"location":
+			{  
+				"street_number":	streetNumber,
+				"street_name":		streetName,
+				"city_name":		city,
+				"state_name":		state,
+				"latitude":			latitude,
+				"longitude":		longitude,
+				"reference":		addressReference
+			},
+			"external_id":			externalStoreID
+		}
 
 		console.log(storeJSON);
 		$.post("api/store/create/",{json:JSON.stringify(storeJSON)},function(results){
@@ -346,21 +356,20 @@ $(document).ready(function() {
 		var externalPOSID=$('#externalPOSID').val();
 
 		// REVISA AQUÍ:
-
 		var category = 1;   // Agrega aquí el número de categoría o MCC necesario para 
 							// Identificar al POS de restaurante
 
 
 		// REVISA AQUÍ:
 		// Comprueba que el posJSON sea el adecuado para crear un POS integrado correctamente.
-
-		var posJSON ={"name":posName,
-					"external_store_id":externalStoreID,
-					"fixed_amount":false,
-					"category_id":category,
-					"external_id":externalPOSID};
-
-
+		var posJSON =
+		{
+			"name":posName,
+			"external_store_id":externalStoreID,
+			"fixed_amount":false,
+			"category_id":category,
+			"external_id":externalPOSID
+		};
 
 		$.post("api/pos/create/",{json:JSON.stringify(posJSON)},function(results){
 			console.log("Crea POS/QR:");
@@ -369,40 +378,40 @@ $(document).ready(function() {
 			$("#responsePOS").text(JSON.stringify(results));
 
 		});
+
 	});
 
 
 }); // Fin document ready
 
 
-// REVISA AQUÍ:
+// REVISA AQUÍ: ------> HECHO!
 // La suma total de producto debería sumar $660
 // Haz los cambios necesarios en las cantidades y/o precio unitario para lograrlo
-
-var items = [{
-			"id":"sku021",
-		    "title" : "Caffè Americano",
-		    "picture_url":"https://globalassets.starbucks.com/assets/f12bc8af498d45ed92c5d6f1dac64062.jpg?impolicy=1by1_wide_1242",
-		    "description" : "Espresso shots topped with hot water create a light layer of crema culminating in this wonderfully rich cup with depth and nuance. Pro Tip: For an additional boost, ask your barista to try this with an extra shot.",
-		    "unit_price" : 90,
-		    "quantity" : 1
-		  },
-		  {
-		  	"id":"sku011",
-		    "title" : "Caffè Misto",
-		    "picture_url":"https://globalassets.starbucks.com/assets/d668acbc691b47249548a3eeac449916.jpg?impolicy=1by1_wide_1242",
-		    "description" : "A one-to-one combination of fresh-brewed coffee and steamed milk add up to one distinctly delicious coffee drink remarkably mixed.",
-		    "unit_price" : 105,
-		    "quantity" : 1
-		  },
-		  {
-		  	"id":"sku097",
-		    "title" : "Iced Lemon Loaf Cake",
-		    "picture_url":"https://globalassets.starbucks.com/assets/c636153c255049a487da5db5b9d5f631.jpg?impolicy=1by1_wide_1242",
-		    "description" : "This citrusy, buttery, moist lemon pound cake topped with a sweet icing creates an amazingly refreshing cake like never before.",
-		    "unit_price" : 125,
-		    "quantity" : 3
-		  }];
-
-
-
+var items =
+[
+	{
+		"id":"sku021",
+		"title" : "Caffè Americano",
+		"picture_url":"https://globalassets.starbucks.com/assets/f12bc8af498d45ed92c5d6f1dac64062.jpg?impolicy=1by1_wide_1242",
+		"description" : "Espresso shots topped with hot water create a light layer of crema culminating in this wonderfully rich cup with depth and nuance. Pro Tip: For an additional boost, ask your barista to try this with an extra shot.",
+		"unit_price" : 96,
+		"quantity" : 1
+	},
+	{
+		"id":"sku011",
+		"title" : "Caffè Misto",
+		"picture_url":"https://globalassets.starbucks.com/assets/d668acbc691b47249548a3eeac449916.jpg?impolicy=1by1_wide_1242",
+		"description" : "A one-to-one combination of fresh-brewed coffee and steamed milk add up to one distinctly delicious coffee drink remarkably mixed.",
+		"unit_price" : 195,
+		"quantity" : 1
+	},
+	{
+		"id":"sku097",
+		"title" : "Iced Lemon Loaf Cake",
+		"picture_url":"https://globalassets.starbucks.com/assets/c636153c255049a487da5db5b9d5f631.jpg?impolicy=1by1_wide_1242",
+		"description" : "This citrusy, buttery, moist lemon pound cake topped with a sweet icing creates an amazingly refreshing cake like never before.",
+		"unit_price" : 125,
+		"quantity" : 3
+	}
+];
