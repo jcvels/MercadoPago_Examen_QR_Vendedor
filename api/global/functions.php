@@ -11,7 +11,7 @@ $country_id="MLA";
 $integrator_id_test="XXXXXXX"; 
 
 $notificationJSON="";
-global $access_token,$collector_id,$notificationJSON,$country_id;
+//global $access_token,$collector_id,$notificationJSON,$country_id;
 
 // Función para hacer llamadas a la API
 // Method: get, post, put o delete
@@ -25,6 +25,7 @@ function curl_call($method,$url,$json)
 	$headers = array("Content-Type: application/json","X-integrator-id: $integrator_id_test");
     $ch = curl_init();
     if($method=="POST"){$post=1;}else{$post=0;};
+
     $options = array(
         CURLOPT_URL => $url,
 		CURLOPT_CUSTOMREQUEST=> $method, 

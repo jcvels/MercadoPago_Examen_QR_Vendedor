@@ -17,9 +17,9 @@
 /*
 	CALLBACK URLS ---------------
 	Localtest:	https://hookbin.com/wNqMokpGLbfz88VDy8bP
-	Heroku:		https://jcvels-mp-qr-vendedor.herokuapp.com/api/notifications/get/
+	Heroku:		https://jcvels-mp-qr-vendedor.herokuapp.com/api/notifications
 */
-var callbackurl = "https://hookbin.com/wNqMokpGLbfz88VDy8bP"; 
+var callbackurl = "https://jcvels-mp-qr-vendedor.herokuapp.com/api/notifications"; 
 
 
 $(document).ready(function() {
@@ -59,19 +59,19 @@ $(document).ready(function() {
 
 		    // Muestra el código QR del punto de venta seleccionado
 		    // Llama al servicio de obtención de información de un POS/QR en base al external_pos_id o también llamado external_id
-			$.get("api/pos/get/",{"external_id":external_id},function(data){
-				console.log("Obtención información de QR:");
-				console.log(data);
+			$.get("api/pos/get?external_id=" + external_id,{},function(data){
+				console.log("Obtención información de QR.");
+				//console.log(data);
 
 				// Si existe external_ID...
-				if(data.paging.total>0){
+				if(data.paging.total>0)
+				{
 			
 					// Muestra el código QR en pantalla:
 					$('#qr').html("<img with='350px' height='350px' src='"+data.results[0].qr.image+"'>");
 					
-					// REVISA AQUÍ:
-					// Agrega la URL notification_url 
-					// para recibir las notificaciones en tu endpoint público.
+					// REVISA AQUÍ: ------> HECHO!
+					// Agrega la URL notification_url para recibir las notificaciones en tu endpoint público.
 					var orderJSON =
 					{
 						"external_reference": external_reference,
@@ -79,11 +79,14 @@ $(document).ready(function() {
 						"items" : items
 					};
 
-					// Crea orden en base al external_id de la página
-					$.post("api/order/create/",{"external_id":external_id,"json":JSON.stringify(orderJSON)},function(data){
+					console.log( "Preparación de orden. ");
+					//console.log( orderJSON );
 
-						console.log("Crea orden:");
-						console.log(data);
+					// Crea orden en base al external_id de la página
+					$.get("api/order/create/index.php?external_id=" + external_id, { json:JSON.stringify(orderJSON) } , function(data)
+					{
+						console.log("Creación de orden.");
+						//console.log(data);
 
 						// Muestra JSON de la orden creada
 						$('#createdOrder').text(JSON.stringify(data));
@@ -96,15 +99,13 @@ $(document).ready(function() {
     					var cashSound=true;
 
 						// Inicia comprobación de estado de pago cada 3 segundos
-
-						checkStatus = setInterval(function(){
-
+						checkStatus = setInterval(function()
+						{
 							// Comprueba estado del pago vía Seach de Merchant_order
-
-							$.get("api/order/status/",{"external_reference":external_reference},function(data){
-								
-								console.log("Search de Merchant_order:");
-								console.log(data);
+							$.get("api/order/status?external_reference=" + external_reference,{},function(data)
+							{
+								console.log("Esperando pago. Search de Merchant_order.");
+								//console.log(data);
 
 								var elements = data.elements;
 								var totalElements = data.total;
@@ -115,18 +116,27 @@ $(document).ready(function() {
 									$('#orderStatus').text(orderStatus);
 									$('#loading').html("<img src='assets/img/ajax-loader.gif'>");
 
-									try{
-										if(orderStatus=="opened" && elements[totalElements-1].payments[0].status=="rejected"){
+									try
+									{
+										if(orderStatus=="opened" && elements[totalElements-1].payments[0].status=="rejected")
+										{
 											// print 
-											if($('#paymentStatusRejected').text()==""){
+											if($('#paymentStatusRejected').text()=="")
+											{
 												$('#paymentStatusRejected').text(JSON.stringify(data));
 											}
 										}
-									}catch(e){}
+									}
+									catch(e)
+									{
+
+									}
 
 									// Si la orden se cerró (pagó) termina el timeout y pinta el JSON resultante y cierra el modal
 
-									if(orderStatus=="closed"){
+									if(orderStatus=="closed")
+									{
+										console.log( "Pago detectado mediante busqueda de merchant_order.");
 										if(cashSound){playSound("cash")};
 										cashSound=false;
 										setTimeout(clearInterval(checkStatus),3000);
@@ -134,15 +144,11 @@ $(document).ready(function() {
 										$('#orderFinalStatus').text(elements[totalElements-1]);
 										$('#exampleModal').modal("hide");
 										$('#paymentStatusSearch').text(JSON.stringify(data));
-
-										
 									} // Fin if
 								}// Fin totalElements
 							});
-
 							
-							// Comprueba el estado del pago de la orden en servicio de recepción de notificaciones
-
+							/* Comprueba el estado del pago de la orden en servicio de recepción de notificaciones */
 							$.get("api/notifications/get/",{},function(data){
 								console.log("Search Notifications:");
 								console.log(data);
@@ -165,6 +171,7 @@ $(document).ready(function() {
 								// Si la orden se cerró (pagó) se termina la búsqueda y cierra modal.
 								
 								if(data.status=="closed" && data.external_reference==external_reference){
+									console.log( "Pago detectado mediante notificaciones.");
 									if(cashSound){playSound("cash")};
 									cashSound=false;
 									setTimeout(clearInterval(checkStatus),3000);
@@ -172,13 +179,13 @@ $(document).ready(function() {
 									$('#paymentStatusNotification').text(JSON.stringify(data));
 
 								}
-							});
+							}); 
 
 
 							
 						}, 3000); // finaliza intervalo
 
-					}); // end get pos information
+					}).fail( function(){ console.error("--- FAIL!"); } ); // end get pos information
 				
 				}else{ // end if total
 
@@ -208,19 +215,20 @@ $(document).ready(function() {
 	  
 	});
 
-///////////////////////////////////////////////////////////////////////////
-// Common Functions
-///////////////////////////////////////////////////////////////////////////
+/////////// Common Functions ///////////
 
-	function playSound(soundObj) {
+	function playSound(soundObj)
+	{
 		var sound = document.getElementById(soundObj);
 		sound.play();
     }; // end playsound
 
     // Pinta los productos en el checkout.
-	function showProductList(){
+	function showProductList()
+	{
 		var total = 0;
-		for (i in items){
+		for (i in items)
+		{
 			$('#productList').append("<tr><th scope='row'>"+items[i].id+"</th><td><img with='60px' height='60px' src='"+items[i].picture_url+"'></td><td>"+items[i].title+"</td><td>"+items[i].quantity+"</td><td>"+items[i].unit_price+"</td><td>"+items[i].quantity*items[i].unit_price+"</td></tr>");
 			total = total + items[i].quantity*items[i].unit_price;
 		}
@@ -228,9 +236,11 @@ $(document).ready(function() {
 	}; // end showProductList
 
 	// Muestra cuenta atrás.
-	function startTimer(duration, display) {
+	function startTimer(duration, display)
+	{
 	    var timer = duration, minutes, seconds;
-	    setInterval(function () {
+		setInterval(function ()
+		{
 	        minutes = parseInt(timer / 60, 10)
 	        seconds = parseInt(timer % 60, 10);
 
@@ -239,43 +249,47 @@ $(document).ready(function() {
 
 	        display.text(minutes + ":" + seconds);
 
-	        if (--timer < 0) {
+			if (--timer < 0)
+			{
 	            timer = duration;
 	        }
     	}, 1000);
 	};// end starttimer 
 
-/////////////////////////////////////////////////////////////////////////
-// Estas funciones muestran los selectores de país, región, comuna, barrio, ciudad
-///////////////////////////////////////////////////////////////////////////
-	function fillCountrySelector(){
+/////////// Estas funciones muestran los selectores de país, región, comuna, barrio, ciudad ///////////
 
-		$.get("https://api.mercadolibre.com/countries",function(countries){
+	function fillCountrySelector()
+	{
+		$.get("https://api.mercadolibre.com/countries",function(countries)
+		{
 			$('#country').html("<option>Selecciona el país...</option>");
 
 			for(country in countries){
 				$('#country').append("<option value='"+countries[country].id+"'>"+countries[country].name+"</option>");
 			}
 		});
+	};
 
-	}; // 
-
-	$("#country").change(function(){
+	$("#country").change(function()
+	{
 		var selectedCountry = $("#country option:selected").val();
-		$.get("https://api.mercadolibre.com/countries/"+selectedCountry,function(regions){
+		$.get("https://api.mercadolibre.com/countries/"+selectedCountry,function(regions)
+		{
 			regions = regions.states;
 			$('#states').html("<option>Selecciona la región...</option>");
 
-			for(region in regions){
+			for(region in regions)
+			{
 				$('#states').append("<option value='"+regions[region].id+"'>"+regions[region].name+"</option>");
 			}
 		});
 	});
 
-	$("#states").change(function(){
+	$("#states").change(function()
+	{
 		var selectedState = $("#states option:selected").val();
-
-		$.get("https://api.mercadolibre.com/states/"+selectedState,{},function(cities){
+		$.get("https://api.mercadolibre.com/states/"+selectedState,{},function(cities)
+		{
 			cities = cities.cities;
 			$('#cities').html("<option>Selecciona la ciudad o comuna...</option>");
 
@@ -284,13 +298,11 @@ $(document).ready(function() {
 			}
 		});
 	});
-///////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////
-// Función de sucursal o Store
-///////////////////////////////////////////////////////////////////////////
+/////////// Función de sucursal o Store ///////////
 
-	$('#createStore').click(function(){
+	$('#createStore').click(function()
+	{
 		var storeName=$('#storeName').val();
 		var streetName=$('#streetName').val();
 		var streetNumber=$('#streetNumber').val();
@@ -337,53 +349,49 @@ $(document).ready(function() {
 			"external_id":			externalStoreID
 		}
 
+		console.log("Store information:");
 		console.log(storeJSON);
-		$.post("api/store/create/",{json:JSON.stringify(storeJSON)},function(results){
-			console.log("Crea store:");
+		$.post("api/store/create/",{json:JSON.stringify(storeJSON)},function(results)
+		{
+			console.log("Store creation responce:");
 			console.log(results);
 			$("#responseStore").text(JSON.stringify(results));
-		});
+		})
+		.fail( function( err ){ console.log("--> request failed:" + err ); } );
 	});
 
-///////////////////////////////////////////////////////////////////////////
-// POS Functions
-///////////////////////////////////////////////////////////////////////////
+/////////// POS Functions ///////////
 
-	$('#createPOS').click(function(){
+	$('#createPOS').click(function()
+	{
 
 		var posName=$('#storeName').val();
 		var externalStoreID=$('#externalStoreIDPOS').val();
 		var externalPOSID=$('#externalPOSID').val();
 
-		// REVISA AQUÍ:
-		var category = 1;   // Agrega aquí el número de categoría o MCC necesario para 
-							// Identificar al POS de restaurante
-
-
-		// REVISA AQUÍ:
+		// REVISA AQUÍ: ------> HECHO!
+		// Agrega aquí el número de categoría o MCC necesario para identificar al POS de restaurante
 		// Comprueba que el posJSON sea el adecuado para crear un POS integrado correctamente.
+		var category = 621102;   
 		var posJSON =
 		{
-			"name":posName,
-			"external_store_id":externalStoreID,
-			"fixed_amount":false,
-			"category_id":category,
-			"external_id":externalPOSID
+			"name":					posName,
+			"external_store_id":	externalStoreID,
+			"fixed_amount":			true,
+			"category":				category, /* En la documentación figura como 'category' */
+			"external_id":			externalPOSID
 		};
 
-		$.post("api/pos/create/",{json:JSON.stringify(posJSON)},function(results){
+		$.post("api/pos/create/",{json:JSON.stringify(posJSON)},function(results)
+		{
 			console.log("Crea POS/QR:");
 			console.log(results);
-
 			$("#responsePOS").text(JSON.stringify(results));
-
 		});
 
 	});
 
-
 }); // Fin document ready
-
 
 // REVISA AQUÍ: ------> HECHO!
 // La suma total de producto debería sumar $660
@@ -395,7 +403,7 @@ var items =
 		"title" : "Caffè Americano",
 		"picture_url":"https://globalassets.starbucks.com/assets/f12bc8af498d45ed92c5d6f1dac64062.jpg?impolicy=1by1_wide_1242",
 		"description" : "Espresso shots topped with hot water create a light layer of crema culminating in this wonderfully rich cup with depth and nuance. Pro Tip: For an additional boost, ask your barista to try this with an extra shot.",
-		"unit_price" : 96,
+		"unit_price" : 90,
 		"quantity" : 1
 	},
 	{

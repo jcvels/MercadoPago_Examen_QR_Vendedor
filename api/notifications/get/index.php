@@ -15,9 +15,8 @@ $url= " ";
 
 // REVISAR AQUÍ:
 // Agrega la $url necesaria para revisar el estado del pago en base al recurso recibido de la notificación
-
 // Sustituye el método por su correspondiente: get, put, post, delete
 
-curl_call("delete",."$url","");
+curl_call( "get", $lastResource, "" );
 
  ?>
