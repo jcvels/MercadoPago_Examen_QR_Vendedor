@@ -14,14 +14,14 @@
 // correctamente todo el flujo.
 // Busca los comentarios que dicen: REVISA AQUÍ:
 
-console.log( "---> Ejecutando versión: 0 ");
+console.log( "---> Ejecutando versión: 10 ");
 
 /*
 	CALLBACK URLS ---------------
 	Localtest:	https://hookbin.com/wNqMokpGLbfz88VDy8bP
 	Heroku:		https://jcvels-mp-qr-vendedor.herokuapp.com/api/notifications
 */
-var callbackurl = "https://jcvels-mp-qr-vendedor.herokuapp.com/api/notifications"; 
+var callbackurl = "https://hookb.in/ggJD3Kmpd6twWW1NZWZn"; 
 
 
 $(document).ready(function() {
