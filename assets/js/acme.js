@@ -14,6 +14,8 @@
 // correctamente todo el flujo.
 // Busca los comentarios que dicen: REVISA AQUÍ:
 
+console.log( "---> Ejecutando versión: 0 ");
+
 /*
 	CALLBACK URLS ---------------
 	Localtest:	https://hookbin.com/wNqMokpGLbfz88VDy8bP
